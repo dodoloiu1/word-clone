@@ -3,18 +3,51 @@
   "version": "1.0.0",
   "description": "Independent Microsoft Word alternative built from Office 16 (WINWORD.EXE 16.0.20430.20146) reference analysis",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "electron:start": "electron .",
+    "electron:pack": "electron-builder --dir",
+    "electron:dist": "electron-builder"
   },
   "dependencies": {
     "jszip": "^3.10.1"
   },
   "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "jsdom": "^25.0.1",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
+  },
+  "build": {
+    "appId": "com.microsoft.word.alternative",
+    "productName": "Word",
+    "copyright": "Copyright © 2026",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable",
+        "dir"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Word"
+    }
   }
 }
