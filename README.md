@@ -87,7 +87,7 @@ npm run electron:dist
 ```
 
 Generated Windows desktop artifacts are placed in `C:/word/release/`:
-- Unpacked runnable Windows application: `C:/word/release/win-unpacked/Word Clone.exe`
+- Unpacked runnable Windows application: `C:/word/release/win-unpacked/Word.exe`
 - Windows installer / portable executable: `C:/word/release/*.exe`
 
 ---
