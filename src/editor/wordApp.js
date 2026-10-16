@@ -5,18 +5,19 @@ import {
   exportRtfDocument,
   importRtfDocument
 } from '../docx/docxEngine.js';
+import { icons } from './icons.js';
 
-const DEFAULT_DOCUMENT_HTML = `<p class="doc-title">Project Proposal &amp; Specification</p>
-<p class="doc-subtitle">Prepared with Word — Office 16 Reference Edition</p>
-<h1>1. Executive Overview</h1>
-<p>Welcome to <strong>Word</strong>. This document editor is modeled directly after the installed Microsoft Word 2024 / Microsoft 365 desktop reference application (<code>WINWORD.EXE 16.0.20430.20146</code>), featuring the authentic Fluent Ribbon, Aptos 11pt typography, multi-page sheet layout, and OpenXML (<code>.docx</code>) document interoperability.</p>
-<h2>1.1 Core Capabilities</h2>
+const DEFAULT_DOCUMENT_HTML = `<p class="doc-title">Project Proposal &amp; Technical Specification</p>
+<p class="doc-subtitle">Prepared with Microsoft Word Alternative — Office 16 Reference Edition</p>
+<h1>1. Executive Summary</h1>
+<p>Welcome to <strong>Microsoft Word</strong>. This document editor is modeled directly after the installed Microsoft Word desktop reference application (<code>WINWORD.EXE 16.0.20430.20146</code>), featuring the authentic Fluent Ribbon, Aptos 11pt typography, multi-page sheet layout, interactive picture formatting and resizing, and OpenXML (<code>.docx</code>) document interoperability.</p>
+<h2>1.1 System Architecture &amp; Deliverables</h2>
 <ul>
-  <li><strong>Rich Text &amp; Typography:</strong> Format paragraphs with built-in Quick Styles, custom fonts, sizes, highlight colors, lists, and line spacing.</li>
-  <li><strong>Page Layout &amp; Structure:</strong> Customize margins, portrait/landscape orientation, paper sizes, multi-column flow, headers, footers, watermarks, and page breaks.</li>
-  <li><strong>Document Objects:</strong> Insert and edit structured tables, pictures, hyperlinks, equations, footnotes, comments, and automatic Tables of Contents.</li>
+  <li><strong>Rich Text &amp; Typography:</strong> Format paragraphs with built-in Quick Styles, Aptos &amp; Calibri fonts, custom sizes, text highlight colors, multilevel lists, and line spacing.</li>
+  <li><strong>Interactive Object Formatting:</strong> Insert and dynamically resize pictures with 8 control handles, customize text wrapping, style borders and shadows, and manipulate structured tables.</li>
+  <li><strong>Page Layout &amp; Pagination:</strong> Configure page margins, portrait and landscape orientation, standard paper sizes, multi-column flow, headers, footers, watermarks, and page breaks.</li>
 </ul>
-<h2>1.2 Milestone Schedule</h2>
+<h2>1.2 Milestone Roadmap</h2>
 <table>
   <tbody>
     <tr>
@@ -36,7 +37,7 @@ const DEFAULT_DOCUMENT_HTML = `<p class="doc-title">Project Proposal &amp; Speci
     </tr>
     <tr>
       <td>Phase 3</td>
-      <td>Windows Desktop Application (Electron Native Shell)</td>
+      <td>Windows Desktop Application (Electron Shell &amp; Installer)</td>
       <td>Completed</td>
     </tr>
   </tbody>
@@ -52,7 +53,7 @@ const TEMPLATES = {
   },
   default: {
     title: 'Project Proposal',
-    headerText: 'Project Proposal & Specification',
+    headerText: 'Project Proposal & Technical Specification',
     footerText: 'Confidential',
     html: DEFAULT_DOCUMENT_HTML
   },
@@ -82,16 +83,14 @@ const TEMPLATES = {
   },
   academic: {
     title: 'Research Paper',
-    headerText: 'Running head: DISTRIBUTED DOCUMENT SYSTEMS',
+    headerText: 'Running head: DETERMINISTIC OPENXML SERIALIZATION',
     footerText: 'Manuscript Preprint',
     html: `<p class="doc-title" style="text-align: center">Deterministic OpenXML Serialization in Modern Web Environments</p>
 <p class="doc-subtitle" style="text-align: center">Department of Computer Science</p>
 <h1>Abstract</h1>
 <p><em>This paper examines client-side OpenXML (ECMA-376) document synthesis and round-trip fidelity across browser and native desktop runtimes.</em></p>
 <h1>1. Introduction</h1>
-<p>Modern word processors require strict separation between semantic document structure and visual pagination. By combining standardized XML packaging with responsive page layout rules, applications achieve high interoperability.</p>
-<h2>2. Methodology</h2>
-<p>We evaluate paragraph style inheritance, run-level formatting attributes, and section geometry across diverse document workloads.</p>`
+<p>Modern word processors require strict separation between semantic document structure and visual pagination. By combining standardized XML packaging with responsive page layout rules, applications achieve high interoperability.</p>`
   },
   resume: {
     title: 'Executive Resume',
@@ -106,13 +105,7 @@ const TEMPLATES = {
 <ul>
   <li>Architected collaborative rich-text editing engine serving 4M+ daily active users.</li>
   <li>Reduced OpenXML import/export latency by 62% through streaming ZIP compression.</li>
-</ul>
-<h2>Senior Desktop Engineer — Enterprise Systems Corp (2017–2021)</h2>
-<ul>
-  <li>Led Windows desktop client modernization and automated release pipelines.</li>
-</ul>
-<h1>Education</h1>
-<p><strong>M.S. in Computer Science</strong> — University of Washington</p>`
+</ul>`
   }
 };
 
@@ -153,7 +146,7 @@ export function createWordApp(container, options = {}) {
     dirty: false,
     currentFilePath: null,
     documentTitle: 'Document1',
-    headerText: 'Project Proposal & Specification',
+    headerText: 'Project Proposal & Technical Specification',
     footerText: 'Confidential',
     showPageNumbers: true,
     showParagraphMarks: false,
@@ -179,7 +172,7 @@ export function createWordApp(container, options = {}) {
       columns: 1
     },
     metadata: {
-      title: 'Project Proposal & Specification',
+      title: 'Project Proposal & Technical Specification',
       author: 'Word User',
       subject: 'Reference Implementation',
       comments: ''
@@ -190,10 +183,10 @@ export function createWordApp(container, options = {}) {
     history: [],
     historyIndex: -1,
     activeCell: null,
+    selectedPicture: null,
     recentFiles: []
   };
 
-  // Load saved local state if available
   try {
     const savedRecent = localStorage.getItem('word_recent_files');
     if (savedRecent) state.recentFiles = JSON.parse(savedRecent);
@@ -206,29 +199,25 @@ export function createWordApp(container, options = {}) {
     <header class="title-bar">
       <div class="qat-left">
         <div class="app-brand" title="Word — Office 16 Reference Edition">
-          <svg viewBox="0 0 64 64">
-            <rect x="14" y="6" width="44" height="52" rx="4" fill="#2B7CD3"/>
-            <rect x="6" y="16" width="32" height="32" rx="4" fill="#0C3E8C"/>
-            <path d="M13.2 23h3.6l2.3 11.4L21.7 23h3.1l2.5 11.4L29.7 23h3.5l-4.1 18h-3.5l-2.4-11-2.5 11h-3.5L13.2 23z" fill="#ffffff"/>
-          </svg>
+          ${icons.wordBrand}
           <span>Word</span>
         </div>
         <div class="autosave-toggle" data-action="toggle-autosave" title="Toggle AutoSave to local storage">
           <span>AutoSave</span>
           <div class="autosave-pill on" id="autosave-pill"></div>
         </div>
-        <button class="qat-btn" data-action="save-doc" title="Save (Ctrl+S)">💾</button>
-        <button class="qat-btn" data-action="undo" title="Undo (Ctrl+Z)">↶</button>
-        <button class="qat-btn" data-action="redo" title="Redo (Ctrl+Y)">↷</button>
-        <button class="qat-btn" data-action="print-doc" title="Print (Ctrl+P)">🖨️</button>
+        <button class="qat-btn" data-action="save-doc" title="Save (Ctrl+S)">${icons.save}</button>
+        <button class="qat-btn" data-action="undo" title="Undo (Ctrl+Z)">${icons.undo}</button>
+        <button class="qat-btn" data-action="redo" title="Redo (Ctrl+Y)">${icons.redo}</button>
+        <button class="qat-btn" data-action="print-doc" title="Print (Ctrl+P)">${icons.print}</button>
       </div>
 
       <div class="title-center">
         <input type="text" class="doc-title-input" id="doc-title-input" value="${state.documentTitle}" aria-label="Document Title" />
         <span class="save-badge" id="save-badge">Saved</span>
         <div class="tell-me-wrapper">
-          <span class="tell-me-icon">💡</span>
-          <input type="text" class="tell-me-input" id="tell-me-input" placeholder="Tell me what you want to do (Alt+Q)..." autocomplete="off" />
+          <span class="tell-me-icon">${icons.search}</span>
+          <input type="text" class="tell-me-input" id="tell-me-input" placeholder="Search (Alt+Q)..." autocomplete="off" />
           <div class="tell-me-dropdown" id="tell-me-dropdown" style="display: none;"></div>
         </div>
       </div>
@@ -248,7 +237,8 @@ export function createWordApp(container, options = {}) {
       <button class="ribbon-tab" data-tab="references">References</button>
       <button class="ribbon-tab" data-tab="review">Review</button>
       <button class="ribbon-tab" data-tab="view">View</button>
-      <button class="ribbon-tab contextual-tab" data-tab="table" id="table-contextual-tab" style="display: none;">Table Layout</button>
+      <button class="ribbon-tab contextual-tab-picture" data-tab="picture" id="picture-contextual-tab" style="display: none;">Picture Format</button>
+      <button class="ribbon-tab contextual-tab-table" data-tab="table" id="table-contextual-tab" style="display: none;">Table Layout</button>
       <div class="ribbon-spacer"></div>
       <button class="r-btn" data-action="toggle-ribbon" title="Collapse or expand the Ribbon">⌃</button>
     </nav>
@@ -323,12 +313,15 @@ export function createWordApp(container, options = {}) {
 
     <!-- Floating Selection Mini-Toolbar -->
     <div class="mini-toolbar hidden" id="mini-toolbar">
-      <button class="r-btn r-btn-icon" data-action="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-      <button class="r-btn r-btn-icon" data-action="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-      <button class="r-btn r-btn-icon" data-action="underline" title="Underline (Ctrl+U)"><u>U</u></button>
-      <button class="r-btn r-btn-icon" data-action="highlight-yellow" title="Highlight">🖍️</button>
-      <button class="r-btn r-btn-icon" data-action="open-hyperlink-dialog" title="Insert Link (Ctrl+K)">🔗</button>
-      <button class="r-btn r-btn-icon" data-action="add-comment" title="New Comment">💬</button>
+      <button class="r-btn r-btn-icon" data-action="bold" title="Bold (Ctrl+B)">${icons.bold}</button>
+      <button class="r-btn r-btn-icon" data-action="italic" title="Italic (Ctrl+I)">${icons.italic}</button>
+      <button class="r-btn r-btn-icon" data-action="underline" title="Underline (Ctrl+U)">${icons.underline}</button>
+      <button class="r-btn r-btn-icon" data-action="highlight-yellow" title="Highlight">${icons.highlight}</button>
+      <button class="r-btn r-btn-icon" data-action="align-left" title="Align Left">${icons.alignLeft}</button>
+      <button class="r-btn r-btn-icon" data-action="align-center" title="Center">${icons.alignCenter}</button>
+      <button class="r-btn r-btn-icon" data-action="align-right" title="Align Right">${icons.alignRight}</button>
+      <button class="r-btn r-btn-icon" data-action="open-hyperlink-dialog" title="Insert Link (Ctrl+K)">${icons.link}</button>
+      <button class="r-btn r-btn-icon" data-action="add-comment" title="New Comment">${icons.comment}</button>
     </div>
 
     <!-- Status Bar -->
@@ -338,13 +331,14 @@ export function createWordApp(container, options = {}) {
         <button class="status-btn" data-action="open-word-count-dialog" id="status-words-btn" title="Click to open Word Count statistics">0 words</button>
         <span class="status-btn" id="status-chars-label">0 chars</span>
         <span class="status-btn" title="Proofing Language">English (United States)</span>
+        <span class="status-btn" title="Accessibility Checker">Accessibility: Good to go</span>
         <span class="status-btn" id="status-track-indicator" style="display: none;">Track Changes: ON</span>
       </div>
       <div class="status-right">
-        <button class="status-btn" data-action="toggle-focus" title="Focus Mode">🎯 Focus</button>
-        <button class="status-btn" data-action="set-view" data-view="read" title="Read Mode">📖</button>
-        <button class="status-btn active" data-action="set-view" data-view="print" title="Print Layout">📄</button>
-        <button class="status-btn" data-action="set-view" data-view="web" title="Web Layout">🌐</button>
+        <button class="status-btn" data-action="toggle-focus" title="Focus Mode">${icons.focusMode} Focus</button>
+        <button class="status-btn" data-action="set-view" data-view="read" title="Read Mode">${icons.readMode}</button>
+        <button class="status-btn active" data-action="set-view" data-view="print" title="Print Layout">${icons.printLayout}</button>
+        <button class="status-btn" data-action="set-view" data-view="web" title="Web Layout">${icons.webLayout}</button>
         <button class="status-btn" data-action="zoom-out" title="Zoom Out">−</button>
         <input type="range" class="zoom-slider" id="zoom-slider" min="10" max="500" step="10" value="100" aria-label="Zoom Percentage" />
         <button class="status-btn" data-action="zoom-in" title="Zoom In">+</button>
@@ -377,7 +371,7 @@ export function createWordApp(container, options = {}) {
     <input type="file" id="image-upload-input" accept="image/*" style="display: none;" />
   `;
 
-  // Element references
+  // DOM References
   const editorBody = container.querySelector('#editor-body');
   const headerEditable = container.querySelector('#header-editable');
   const footerEditable = container.querySelector('#footer-editable');
@@ -406,9 +400,10 @@ export function createWordApp(container, options = {}) {
   const tellMeInput = container.querySelector('#tell-me-input');
   const tellMeDropdown = container.querySelector('#tell-me-dropdown');
   const miniToolbar = container.querySelector('#mini-toolbar');
+  const pictureContextualTab = container.querySelector('#picture-contextual-tab');
   const tableContextualTab = container.querySelector('#table-contextual-tab');
 
-  // History Management (Undo / Redo)
+  // History Stack
   function pushHistory() {
     const snapshot = {
       html: editorBody.innerHTML,
@@ -437,6 +432,7 @@ export function createWordApp(container, options = {}) {
       editorBody.innerHTML = snap.html;
       headerEditable.innerHTML = snap.headerText;
       footerEditable.innerHTML = snap.footerText;
+      attachPictureBehaviors();
       refreshDocumentMetrics();
     }
   }
@@ -448,11 +444,12 @@ export function createWordApp(container, options = {}) {
       editorBody.innerHTML = snap.html;
       headerEditable.innerHTML = snap.headerText;
       footerEditable.innerHTML = snap.footerText;
+      attachPictureBehaviors();
       refreshDocumentMetrics();
     }
   }
 
-  // Word Count & Metrics Calculation
+  // Metrics
   function getDocumentStats() {
     const rawText = (editorBody.innerText || editorBody.textContent || '')
       .replace(/\u200B/g, '')
@@ -492,9 +489,7 @@ export function createWordApp(container, options = {}) {
       pageSlot.textContent = `Page 1 of ${stats.pages}`;
     }
 
-    if (state.showNavPane) {
-      renderNavPane();
-    }
+    if (state.showNavPane) renderNavPane();
 
     if (state.autoSave) {
       try {
@@ -519,7 +514,7 @@ export function createWordApp(container, options = {}) {
     refreshDocumentMetrics();
   }
 
-  // Apply Page Setup (size, orientation, margins, columns, background, borders, watermark)
+  // Page Setup to DOM
   function applyPageSetupToDom() {
     const sizeInfo = PAPER_SIZES_PX[state.pageSetup.paperSize] || PAPER_SIZES_PX.letter;
     const isLandscape = state.pageSetup.orientation === 'landscape';
@@ -531,8 +526,8 @@ export function createWordApp(container, options = {}) {
 
     documentPage.style.width = `${widthPx}px`;
     documentPage.style.minHeight = `${heightPx}px`;
-    documentPage.style.paddingTop = `${ Math.max(24, margins.top - 36) }px`;
-    documentPage.style.paddingBottom = `${ Math.max(24, margins.bottom - 36) }px`;
+    documentPage.style.paddingTop = `${Math.max(24, margins.top - 36)}px`;
+    documentPage.style.paddingBottom = `${Math.max(24, margins.bottom - 36)}px`;
     documentPage.style.paddingLeft = `${margins.left}px`;
     documentPage.style.paddingRight = `${margins.right}px`;
     documentPage.style.backgroundColor = state.pageColor || '#FFFFFF';
@@ -551,12 +546,208 @@ export function createWordApp(container, options = {}) {
     }
 
     const wmText = container.querySelector('#watermark-text');
-    if (wmText) {
-      wmText.textContent = state.watermark || '';
+    if (wmText) wmText.textContent = state.watermark || '';
+  }
+
+  // ==========================================================================
+  // Interactive Picture Resizing & Formatting (Word 1:1)
+  // ==========================================================================
+  function wrapPictureElement(img) {
+    if (img.parentElement && img.parentElement.classList.contains('pic-wrapper')) {
+      return img.parentElement;
+    }
+
+    const wrapper = document.createElement('span');
+    wrapper.className = 'pic-wrapper wrap-inline';
+    wrapper.contentEditable = 'false';
+
+    // Insert wrapper in place of image
+    img.before(wrapper);
+    wrapper.appendChild(img);
+
+    // 8 Resize Handles + Rotation Handle
+    const handles = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'rot'];
+    handles.forEach(pos => {
+      const h = document.createElement('span');
+      h.className = `resize-handle handle-${pos}`;
+      h.dataset.handle = pos;
+      wrapper.appendChild(h);
+    });
+
+    // Floating Layout Options Horseshoe Icon
+    const layoutBtn = document.createElement('button');
+    layoutBtn.className = 'pic-layout-btn';
+    layoutBtn.type = 'button';
+    layoutBtn.title = 'Layout Options (Text Wrapping)';
+    layoutBtn.innerHTML = icons.wrapText;
+    wrapper.appendChild(layoutBtn);
+
+    // Dimension tooltip
+    const tooltip = document.createElement('span');
+    tooltip.className = 'pic-dim-tooltip';
+    tooltip.style.display = 'none';
+    wrapper.appendChild(tooltip);
+
+    setupPictureInteraction(wrapper, img);
+    return wrapper;
+  }
+
+  function setupPictureInteraction(wrapper, img) {
+    wrapper.addEventListener('click', e => {
+      e.stopPropagation();
+      selectPicture(wrapper);
+    });
+
+    const layoutBtn = wrapper.querySelector('.pic-layout-btn');
+    if (layoutBtn) {
+      layoutBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        openPictureWrapMenu(wrapper);
+      });
+    }
+
+    // Drag Resizing Logic
+    const handles = wrapper.querySelectorAll('.resize-handle');
+    handles.forEach(handle => {
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const handleType = handle.dataset.handle;
+        startPictureResize(e, wrapper, img, handleType);
+      });
+    });
+  }
+
+  function startPictureResize(startEvent, wrapper, img, handleType) {
+    const startX = startEvent.clientX;
+    const startY = startEvent.clientY;
+    const startWidth = img.offsetWidth;
+    const startHeight = img.offsetHeight;
+    const aspectRatio = startWidth / (startHeight || 1);
+    const tooltip = wrapper.querySelector('.pic-dim-tooltip');
+    if (tooltip) tooltip.style.display = 'block';
+
+    function onMouseMove(moveEvent) {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+
+      let newWidth = startWidth;
+      let newHeight = startHeight;
+
+      if (handleType === 'se') {
+        newWidth = Math.max(30, startWidth + dx);
+        newHeight = Math.round(newWidth / aspectRatio);
+      } else if (handleType === 'sw') {
+        newWidth = Math.max(30, startWidth - dx);
+        newHeight = Math.round(newWidth / aspectRatio);
+      } else if (handleType === 'ne') {
+        newWidth = Math.max(30, startWidth + dx);
+        newHeight = Math.round(newWidth / aspectRatio);
+      } else if (handleType === 'nw') {
+        newWidth = Math.max(30, startWidth - dx);
+        newHeight = Math.round(newWidth / aspectRatio);
+      } else if (handleType === 'e') {
+        newWidth = Math.max(30, startWidth + dx);
+      } else if (handleType === 'w') {
+        newWidth = Math.max(30, startWidth - dx);
+      } else if (handleType === 's') {
+        newHeight = Math.max(30, startHeight + dy);
+      } else if (handleType === 'n') {
+        newHeight = Math.max(30, startHeight - dy);
+      } else if (handleType === 'rot') {
+        // Rotation simulation
+        const currentRot = (parseInt(wrapper.dataset.rotation || '0', 10) + Math.round(dx / 2)) % 360;
+        img.style.transform = `rotate(${currentRot}deg)`;
+        wrapper.dataset.rotation = String(currentRot);
+        if (tooltip) tooltip.textContent = `Rotation: ${currentRot}°`;
+        return;
+      }
+
+      img.style.width = `${newWidth}px`;
+      img.style.height = `${newHeight}px`;
+
+      const widthIn = (newWidth / 96).toFixed(2);
+      const heightIn = (newHeight / 96).toFixed(2);
+      if (tooltip) tooltip.textContent = `W: ${widthIn}" (${newWidth}px) × H: ${heightIn}" (${newHeight}px)`;
+
+      // Sync Ribbon Size inputs if active
+      const wInp = container.querySelector('#pic-width-inp');
+      const hInp = container.querySelector('#pic-height-inp');
+      if (wInp) wInp.value = widthIn;
+      if (hInp) hInp.value = heightIn;
+    }
+
+    function onMouseUp() {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      if (tooltip) tooltip.style.display = 'none';
+      pushHistory();
+      markDirty();
+    }
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }
+
+  function selectPicture(wrapper) {
+    deselectAllPictures();
+    wrapper.classList.add('selected');
+    state.selectedPicture = wrapper;
+    pictureContextualTab.style.display = 'inline-flex';
+    state.activeTab = 'picture';
+    renderRibbon();
+  }
+
+  function deselectAllPictures() {
+    editorBody.querySelectorAll('.pic-wrapper.selected').forEach(w => w.classList.remove('selected'));
+    state.selectedPicture = null;
+    pictureContextualTab.style.display = 'none';
+    if (state.activeTab === 'picture') {
+      state.activeTab = 'home';
+      renderRibbon();
     }
   }
 
-  // Render Ribbon Surface for Active Tab
+  function openPictureWrapMenu(wrapper) {
+    openModal(
+      'Layout Options (Text Wrapping)',
+      `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn-secondary wrap-opt" data-wrap="wrap-inline" style="text-align:left;padding:10px;">
+          <strong>In Line with Text</strong> — Picture moves with the paragraph as text.
+        </button>
+        <button class="btn-secondary wrap-opt" data-wrap="wrap-square-left" style="text-align:left;padding:10px;">
+          <strong>Square Left</strong> — Text wraps cleanly around the right side of the picture.
+        </button>
+        <button class="btn-secondary wrap-opt" data-wrap="wrap-square-right" style="text-align:left;padding:10px;">
+          <strong>Square Right</strong> — Text wraps cleanly around the left side of the picture.
+        </button>
+        <button class="btn-secondary wrap-opt" data-wrap="wrap-center" style="text-align:left;padding:10px;">
+          <strong>Top and Bottom</strong> — Picture occupies its own centered block with text above and below.
+        </button>
+      </div>
+      `,
+      null
+    );
+    modalDialog.querySelectorAll('.wrap-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        wrapper.className = `pic-wrapper selected ${btn.dataset.wrap}`;
+        modalBackdrop.classList.add('hidden');
+        pushHistory();
+        markDirty();
+      });
+    });
+  }
+
+  function attachPictureBehaviors() {
+    editorBody.querySelectorAll('img').forEach(img => {
+      wrapPictureElement(img);
+    });
+  }
+
+  // ==========================================================================
+  // Ribbon Surface Rendering (Word 1:1 with Vector Icons)
+  // ==========================================================================
   function renderRibbon() {
     const tab = state.activeTab;
     container.querySelectorAll('.ribbon-tab[data-tab]').forEach(btn => {
@@ -571,13 +762,13 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="paste" title="Paste (Ctrl+V)">
-              <span class="r-icon">📋</span>
+              <span class="r-icon">${icons.paste}</span>
               <span class="r-label">Paste</span>
             </button>
             <div class="ribbon-col">
-              <button class="r-btn" data-action="cut" title="Cut (Ctrl+X)">✂️ Cut</button>
-              <button class="r-btn" data-action="copy" title="Copy (Ctrl+C)">📄 Copy</button>
-              <button class="r-btn ${state.formatPainterStyle ? 'active' : ''}" data-action="format-painter" title="Copy formatting from selection">🖌️ Format Painter</button>
+              <button class="r-btn" data-action="cut" title="Cut (Ctrl+X)">${icons.cut} Cut</button>
+              <button class="r-btn" data-action="copy" title="Copy (Ctrl+C)">${icons.copy} Copy</button>
+              <button class="r-btn ${state.formatPainterStyle ? 'active' : ''}" data-action="format-painter" title="Format Painter">${icons.formatPainter} Format Painter</button>
             </div>
           </div>
           <div class="ribbon-group-footer">Clipboard</div>
@@ -618,30 +809,24 @@ export function createWordApp(container, options = {}) {
                   <option value="48">48</option>
                   <option value="72">72</option>
                 </select>
-                <button class="r-btn r-btn-icon" data-action="font-size-up" title="Increase Font Size (Ctrl+Shift+>)">A▲</button>
-                <button class="r-btn r-btn-icon" data-action="font-size-down" title="Decrease Font Size (Ctrl+Shift+<)">A▼</button>
-                <select class="r-select" id="ribbon-change-case" aria-label="Change Case" title="Change Case" style="width: 54px;">
-                  <option value="">Aa</option>
-                  <option value="sentence">Sentence case</option>
-                  <option value="lower">lowercase</option>
-                  <option value="upper">UPPERCASE</option>
-                  <option value="capitalize">Capitalize Each Word</option>
-                </select>
-                <button class="r-btn r-btn-icon" data-action="clear-formatting" title="Clear All Formatting">🧹</button>
+                <button class="r-btn r-btn-icon" data-action="font-size-up" title="Increase Font Size (Ctrl+Shift+>)">${icons.growFont}</button>
+                <button class="r-btn r-btn-icon" data-action="font-size-down" title="Decrease Font Size (Ctrl+Shift+<)">${icons.shrinkFont}</button>
+                <button class="r-btn r-btn-icon" data-action="open-case-menu" title="Change Case">${icons.changeCase}</button>
+                <button class="r-btn r-btn-icon" data-action="clear-formatting" title="Clear All Formatting">${icons.clearFormatting}</button>
               </div>
               <div class="ribbon-row">
-                <button class="r-btn r-btn-icon" data-action="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-                <button class="r-btn r-btn-icon" data-action="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-                <button class="r-btn r-btn-icon" data-action="underline" title="Underline (Ctrl+U)"><u>U</u></button>
-                <button class="r-btn r-btn-icon" data-action="strikethrough" title="Strikethrough"><s>ab</s></button>
-                <button class="r-btn r-btn-icon" data-action="subscript" title="Subscript (Ctrl+=)">x₂</button>
-                <button class="r-btn r-btn-icon" data-action="superscript" title="Superscript (Ctrl+Shift++)">x²</button>
+                <button class="r-btn r-btn-icon" data-action="bold" title="Bold (Ctrl+B)">${icons.bold}</button>
+                <button class="r-btn r-btn-icon" data-action="italic" title="Italic (Ctrl+I)">${icons.italic}</button>
+                <button class="r-btn r-btn-icon" data-action="underline" title="Underline (Ctrl+U)">${icons.underline}</button>
+                <button class="r-btn r-btn-icon" data-action="strikethrough" title="Strikethrough">${icons.strikethrough}</button>
+                <button class="r-btn r-btn-icon" data-action="subscript" title="Subscript (Ctrl+=)">${icons.subscript}</button>
+                <button class="r-btn r-btn-icon" data-action="superscript" title="Superscript (Ctrl+Shift++)">${icons.superscript}</button>
                 <label class="color-swatch-btn" title="Text Highlight Color">
-                  <span>🖍️</span>
+                  ${icons.highlight}
                   <input type="color" id="ribbon-highlight-color" value="#FFF100" />
                 </label>
                 <label class="color-swatch-btn" title="Font Color">
-                  <span>A</span>
+                  ${icons.fontColor}
                   <input type="color" id="ribbon-font-color" value="#C00000" />
                 </label>
               </div>
@@ -658,28 +843,21 @@ export function createWordApp(container, options = {}) {
           <div class="ribbon-group-body">
             <div class="ribbon-col">
               <div class="ribbon-row">
-                <button class="r-btn r-btn-icon" data-action="bullet-list" title="Bullets">•≡</button>
-                <button class="r-btn r-btn-icon" data-action="number-list" title="Numbering">1≡</button>
-                <button class="r-btn r-btn-icon" data-action="outdent" title="Decrease Indent">⇤</button>
-                <button class="r-btn r-btn-icon" data-action="indent" title="Increase Indent">⇥</button>
-                <button class="r-btn r-btn-icon" data-action="sort-paragraphs" title="Sort Paragraphs A to Z">A↓Z</button>
-                <button class="r-btn r-btn-icon ${state.showParagraphMarks ? 'active' : ''}" data-action="toggle-paragraph-marks" title="Show/Hide Paragraph Marks (¶)">¶</button>
+                <button class="r-btn r-btn-icon" data-action="bullet-list" title="Bullets">${icons.bullets}</button>
+                <button class="r-btn r-btn-icon" data-action="number-list" title="Numbering">${icons.numbering}</button>
+                <button class="r-btn r-btn-icon" data-action="outdent" title="Decrease Indent">${icons.outdent}</button>
+                <button class="r-btn r-btn-icon" data-action="indent" title="Increase Indent">${icons.indent}</button>
+                <button class="r-btn r-btn-icon" data-action="sort-paragraphs" title="Sort Paragraphs A to Z">${icons.sort}</button>
+                <button class="r-btn r-btn-icon ${state.showParagraphMarks ? 'active' : ''}" data-action="toggle-paragraph-marks" title="Show/Hide Paragraph Marks (¶)">${icons.pilcrow}</button>
               </div>
               <div class="ribbon-row">
-                <button class="r-btn r-btn-icon" data-action="align-left" title="Align Left (Ctrl+L)">⫷</button>
-                <button class="r-btn r-btn-icon" data-action="align-center" title="Center (Ctrl+E)">⫼</button>
-                <button class="r-btn r-btn-icon" data-action="align-right" title="Align Right (Ctrl+R)">⫸</button>
-                <button class="r-btn r-btn-icon" data-action="align-justify" title="Justify (Ctrl+J)">☰</button>
-                <select class="r-select" id="ribbon-line-spacing" aria-label="Line Spacing" title="Line and Paragraph Spacing" style="width: 62px;">
-                  <option value="1">↕ 1.0</option>
-                  <option value="1.15" selected>↕ 1.15</option>
-                  <option value="1.5">↕ 1.5</option>
-                  <option value="2">↕ 2.0</option>
-                  <option value="2.5">↕ 2.5</option>
-                  <option value="3">↕ 3.0</option>
-                </select>
-                <button class="r-btn r-btn-icon" data-action="paragraph-shading" title="Paragraph Shading">🪣</button>
-                <button class="r-btn r-btn-icon" data-action="paragraph-border" title="Toggle Paragraph Box Border">▣</button>
+                <button class="r-btn r-btn-icon" data-action="align-left" title="Align Left (Ctrl+L)">${icons.alignLeft}</button>
+                <button class="r-btn r-btn-icon" data-action="align-center" title="Center (Ctrl+E)">${icons.alignCenter}</button>
+                <button class="r-btn r-btn-icon" data-action="align-right" title="Align Right (Ctrl+R)">${icons.alignRight}</button>
+                <button class="r-btn r-btn-icon" data-action="align-justify" title="Justify (Ctrl+J)">${icons.alignJustify}</button>
+                <button class="r-btn r-btn-icon" data-action="open-line-spacing-dialog" title="Line and Paragraph Spacing">${icons.lineSpacing}</button>
+                <button class="r-btn r-btn-icon" data-action="paragraph-shading" title="Paragraph Shading">${icons.shading}</button>
+                <button class="r-btn r-btn-icon" data-action="paragraph-border" title="Borders">${icons.borders}</button>
               </div>
             </div>
           </div>
@@ -708,9 +886,9 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <div class="ribbon-col">
-              <button class="r-btn" data-action="open-find-dialog" title="Find (Ctrl+F)">🔍 Find</button>
-              <button class="r-btn" data-action="open-replace-dialog" title="Replace (Ctrl+H)">⇄ Replace</button>
-              <button class="r-btn" data-action="select-all" title="Select All (Ctrl+A)">▣ Select All</button>
+              <button class="r-btn" data-action="open-find-dialog" title="Find (Ctrl+F)">${icons.find} Find</button>
+              <button class="r-btn" data-action="open-replace-dialog" title="Replace (Ctrl+H)">${icons.replace} Replace</button>
+              <button class="r-btn" data-action="select-all" title="Select All (Ctrl+A)">${icons.selectAll} Select All</button>
             </div>
           </div>
           <div class="ribbon-group-footer">Editing</div>
@@ -721,15 +899,15 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="insert-cover-page" title="Insert Cover Page">
-              <span class="r-icon">📘</span>
+              <span class="r-icon">${icons.coverPage}</span>
               <span class="r-label">Cover Page</span>
             </button>
             <button class="r-btn r-btn-large" data-action="insert-blank-page" title="Insert Blank Page">
-              <span class="r-icon">📄</span>
+              <span class="r-icon">${icons.blankPage}</span>
               <span class="r-label">Blank Page</span>
             </button>
             <button class="r-btn r-btn-large" data-action="insert-page-break" title="Insert Page Break (Ctrl+Enter)">
-              <span class="r-icon">✂️</span>
+              <span class="r-icon">${icons.pageBreak}</span>
               <span class="r-label">Page Break</span>
             </button>
           </div>
@@ -739,7 +917,7 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="open-table-dialog" title="Insert Table">
-              <span class="r-icon">⊞</span>
+              <span class="r-icon">${icons.table}</span>
               <span class="r-label">Table</span>
             </button>
           </div>
@@ -749,15 +927,15 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="trigger-image-upload" title="Insert Picture from Device">
-              <span class="r-icon">🖼️</span>
+              <span class="r-icon">${icons.pictures}</span>
               <span class="r-label">Pictures</span>
             </button>
-            <button class="r-btn r-btn-large" data-action="insert-callout-shape" title="Insert Callout Box">
-              <span class="r-icon">💠</span>
+            <button class="r-btn r-btn-large" data-action="insert-callout-shape" title="Insert Shape">
+              <span class="r-icon">${icons.shapes}</span>
               <span class="r-label">Shapes</span>
             </button>
-            <button class="r-btn r-btn-large" data-action="insert-chart-graphic" title="Insert Sample SVG Chart">
-              <span class="r-icon">📊</span>
+            <button class="r-btn r-btn-large" data-action="insert-chart-graphic" title="Insert Sample Chart">
+              <span class="r-icon">${icons.chart}</span>
               <span class="r-label">Chart</span>
             </button>
           </div>
@@ -767,11 +945,11 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="open-hyperlink-dialog" title="Insert Hyperlink (Ctrl+K)">
-              <span class="r-icon">🔗</span>
+              <span class="r-icon">${icons.link}</span>
               <span class="r-label">Link</span>
             </button>
             <button class="r-btn r-btn-large" data-action="insert-bookmark" title="Insert Bookmark Anchor">
-              <span class="r-icon">🔖</span>
+              <span class="r-icon">${icons.bookmark}</span>
               <span class="r-label">Bookmark</span>
             </button>
           </div>
@@ -781,7 +959,7 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="add-comment" title="Insert New Comment">
-              <span class="r-icon">💬</span>
+              <span class="r-icon">${icons.comment}</span>
               <span class="r-label">Comment</span>
             </button>
           </div>
@@ -791,15 +969,15 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="focus-header" title="Edit Document Header">
-              <span class="r-icon">⬆️</span>
+              <span class="r-icon">${icons.header}</span>
               <span class="r-label">Header</span>
             </button>
             <button class="r-btn r-btn-large" data-action="focus-footer" title="Edit Document Footer">
-              <span class="r-icon">⬇️</span>
+              <span class="r-icon">${icons.footer}</span>
               <span class="r-label">Footer</span>
             </button>
             <button class="r-btn r-btn-large ${state.showPageNumbers ? 'active' : ''}" data-action="toggle-page-numbers" title="Toggle Page Numbers">
-              <span class="r-icon">#️⃣</span>
+              <span class="r-icon">${icons.pageNumber}</span>
               <span class="r-label">Page Number</span>
             </button>
           </div>
@@ -809,19 +987,147 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="insert-date-time" title="Insert Current Date & Time">
-              <span class="r-icon">📅</span>
+              <span class="r-icon">${icons.dateTime}</span>
               <span class="r-label">Date &amp; Time</span>
             </button>
             <button class="r-btn r-btn-large" data-action="open-equation-dialog" title="Insert Mathematical Equation">
-              <span class="r-icon">π</span>
+              <span class="r-icon">${icons.equation}</span>
               <span class="r-label">Equation</span>
             </button>
             <button class="r-btn r-btn-large" data-action="open-symbol-dialog" title="Insert Special Symbol">
-              <span class="r-icon">Ω</span>
+              <span class="r-icon">${icons.symbol}</span>
               <span class="r-label">Symbol</span>
             </button>
           </div>
           <div class="ribbon-group-footer">Symbols</div>
+        </div>
+      `;
+    } else if (tab === 'picture') {
+      // Contextual Picture Format Tab (Word 1:1)
+      const selectedImg = state.selectedPicture ? state.selectedPicture.querySelector('img') : null;
+      const wIn = selectedImg ? (selectedImg.offsetWidth / 96).toFixed(2) : '3.50';
+      const hIn = selectedImg ? (selectedImg.offsetHeight / 96).toFixed(2) : '2.50';
+
+      ribbonSurface.innerHTML = `
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <button class="r-btn r-btn-large" data-action="pic-style-round" title="Rounded Corners">
+              <span class="r-icon">${icons.pictureBorder}</span>
+              <span class="r-label">Rounded</span>
+            </button>
+            <button class="r-btn r-btn-large" data-action="pic-style-shadow" title="Soft Shadow">
+              <span class="r-icon">${icons.pictureEffects}</span>
+              <span class="r-label">Drop Shadow</span>
+            </button>
+            <button class="r-btn r-btn-large" data-action="pic-style-frame" title="Metal Picture Frame">
+              <span class="r-icon">${icons.pictureBorder}</span>
+              <span class="r-label">Frame</span>
+            </button>
+            <button class="r-btn r-btn-large" data-action="pic-style-circle" title="Oval / Circle Crop">
+              <span class="r-icon">${icons.crop}</span>
+              <span class="r-label">Oval Mask</span>
+            </button>
+          </div>
+          <div class="ribbon-group-footer">Picture Styles</div>
+        </div>
+
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <div class="ribbon-col">
+              <label style="font-size:10.5px;color:var(--text-secondary);">Border Color</label>
+              <input type="color" id="pic-border-color" value="#185ABD" style="height:22px;border:none;cursor:pointer;" />
+            </div>
+            <div class="ribbon-col">
+              <label style="font-size:10.5px;color:var(--text-secondary);">Border Width</label>
+              <select class="r-select" id="pic-border-width">
+                <option value="0">None</option>
+                <option value="1px">1 pt</option>
+                <option value="2px" selected>2 pt</option>
+                <option value="3px">3 pt</option>
+                <option value="5px">5 pt</option>
+              </select>
+            </div>
+            <button class="r-btn r-btn-large" data-action="pic-reset-style" title="Reset Picture Formatting">
+              <span class="r-icon">${icons.clearFormatting}</span>
+              <span class="r-label">Reset Style</span>
+            </button>
+          </div>
+          <div class="ribbon-group-footer">Borders &amp; Adjust</div>
+        </div>
+
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <button class="r-btn r-btn-large" data-action="pic-open-wrap" title="Text Wrapping">
+              <span class="r-icon">${icons.wrapText}</span>
+              <span class="r-label">Wrap Text</span>
+            </button>
+            <div class="ribbon-col">
+              <button class="r-btn" data-action="pic-rotate-90">${icons.rotatePicture} Rotate 90°</button>
+              <button class="r-btn" data-action="pic-flip-h">${icons.rotatePicture} Flip Horizontal</button>
+              <button class="r-btn" data-action="pic-delete" style="color:#C00000;">🗑️ Delete Picture</button>
+            </div>
+          </div>
+          <div class="ribbon-group-footer">Arrange</div>
+        </div>
+
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <div class="ribbon-col">
+              <label style="font-size:10.5px;color:var(--text-secondary);">Height (inches)</label>
+              <input type="number" step="0.25" id="pic-height-inp" value="${hIn}" style="width:68px;height:22px;" />
+            </div>
+            <div class="ribbon-col">
+              <label style="font-size:10.5px;color:var(--text-secondary);">Width (inches)</label>
+              <input type="number" step="0.25" id="pic-width-inp" value="${wIn}" style="width:68px;height:22px;" />
+            </div>
+          </div>
+          <div class="ribbon-group-footer">Size</div>
+        </div>
+      `;
+    } else if (tab === 'table') {
+      ribbonSurface.innerHTML = `
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <button class="r-btn r-btn-large" data-action="table-insert-row-above" title="Insert Above">
+              <span class="r-icon">${icons.insertRowAbove}</span>
+              <span class="r-label">Insert Above</span>
+            </button>
+            <button class="r-btn r-btn-large" data-action="table-insert-row-below" title="Insert Below">
+              <span class="r-icon">${icons.insertRowBelow}</span>
+              <span class="r-label">Insert Below</span>
+            </button>
+            <button class="r-btn r-btn-large" data-action="table-insert-col-left" title="Insert Left">
+              <span class="r-icon">${icons.insertColLeft}</span>
+              <span class="r-label">Insert Left</span>
+            </button>
+            <button class="r-btn r-btn-large" data-action="table-insert-col-right" title="Insert Right">
+              <span class="r-icon">${icons.insertColRight}</span>
+              <span class="r-label">Insert Right</span>
+            </button>
+          </div>
+          <div class="ribbon-group-footer">Rows &amp; Columns</div>
+        </div>
+
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <div class="ribbon-col">
+              <button class="r-btn" data-action="table-delete-row">${icons.deleteRow} Delete Row</button>
+              <button class="r-btn" data-action="table-delete-col">${icons.deleteCol} Delete Column</button>
+              <button class="r-btn" data-action="table-delete-table">${icons.deleteTable} Delete Table</button>
+            </div>
+          </div>
+          <div class="ribbon-group-footer">Delete</div>
+        </div>
+
+        <div class="ribbon-group">
+          <div class="ribbon-group-body">
+            <div class="ribbon-col">
+              <button class="r-btn" data-action="table-merge-right">${icons.mergeCells} Merge Right</button>
+              <button class="r-btn" data-action="table-split-cell">${icons.splitCells} Split Cell</button>
+              <button class="r-btn" data-action="table-shade-cell">${icons.tableShading} Shade Cell</button>
+            </div>
+          </div>
+          <div class="ribbon-group-footer">Merge &amp; Shading</div>
         </div>
       `;
     } else if (tab === 'design') {
@@ -829,19 +1135,19 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="apply-theme" data-theme="office">
-              <span class="r-icon">🎨</span>
+              <span class="r-icon">${icons.shapes}</span>
               <span class="r-label">Office (Aptos)</span>
             </button>
             <button class="r-btn r-btn-large" data-action="apply-theme" data-theme="classic">
-              <span class="r-icon">🏛️</span>
+              <span class="r-icon">${icons.shapes}</span>
               <span class="r-label">Classic (Calibri)</span>
             </button>
             <button class="r-btn r-btn-large" data-action="apply-theme" data-theme="editorial">
-              <span class="r-icon">📰</span>
+              <span class="r-icon">${icons.shapes}</span>
               <span class="r-label">Editorial (Georgia)</span>
             </button>
             <button class="r-btn r-btn-large" data-action="apply-theme" data-theme="academic">
-              <span class="r-icon">🎓</span>
+              <span class="r-icon">${icons.shapes}</span>
               <span class="r-label">Academic (Times)</span>
             </button>
           </div>
@@ -851,16 +1157,16 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="open-watermark-dialog">
-              <span class="r-icon">💧</span>
+              <span class="r-icon">${icons.watermark}</span>
               <span class="r-label">Watermark</span>
             </button>
             <label class="r-btn r-btn-large" style="cursor: pointer;">
-              <span class="r-icon">🎨</span>
+              <span class="r-icon">${icons.pageColor}</span>
               <span class="r-label">Page Color</span>
               <input type="color" id="design-page-color" value="${state.pageColor}" style="width: 24px; height: 14px; border: none; padding: 0;" />
             </label>
             <button class="r-btn r-btn-large ${state.pageBorder ? 'active' : ''}" data-action="toggle-page-border">
-              <span class="r-icon">🖼️</span>
+              <span class="r-icon">${icons.borders}</span>
               <span class="r-label">Page Borders</span>
             </button>
           </div>
@@ -872,7 +1178,7 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <div class="ribbon-col">
-              <label style="font-size: 10.5px; color: var(--text-secondary);">Margins</label>
+              <label style="font-size: 10.5px; color: var(--text-secondary);">${icons.margins} Margins</label>
               <select class="r-select" id="layout-margins-select">
                 <option value="normal" ${state.pageSetup.margins === 'normal' ? 'selected' : ''}>Normal (1" all)</option>
                 <option value="narrow" ${state.pageSetup.margins === 'narrow' ? 'selected' : ''}>Narrow (0.5" all)</option>
@@ -881,14 +1187,14 @@ export function createWordApp(container, options = {}) {
               </select>
             </div>
             <div class="ribbon-col">
-              <label style="font-size: 10.5px; color: var(--text-secondary);">Orientation</label>
+              <label style="font-size: 10.5px; color: var(--text-secondary);">${icons.orientation} Orientation</label>
               <select class="r-select" id="layout-orientation-select">
                 <option value="portrait" ${state.pageSetup.orientation === 'portrait' ? 'selected' : ''}>Portrait</option>
                 <option value="landscape" ${state.pageSetup.orientation === 'landscape' ? 'selected' : ''}>Landscape</option>
               </select>
             </div>
             <div class="ribbon-col">
-              <label style="font-size: 10.5px; color: var(--text-secondary);">Size</label>
+              <label style="font-size: 10.5px; color: var(--text-secondary);">${icons.size} Size</label>
               <select class="r-select" id="layout-size-select">
                 <option value="letter" ${state.pageSetup.paperSize === 'letter' ? 'selected' : ''}>Letter (8.5" × 11")</option>
                 <option value="legal" ${state.pageSetup.paperSize === 'legal' ? 'selected' : ''}>Legal (8.5" × 14")</option>
@@ -897,7 +1203,7 @@ export function createWordApp(container, options = {}) {
               </select>
             </div>
             <div class="ribbon-col">
-              <label style="font-size: 10.5px; color: var(--text-secondary);">Columns</label>
+              <label style="font-size: 10.5px; color: var(--text-secondary);">${icons.columns} Columns</label>
               <select class="r-select" id="layout-columns-select">
                 <option value="1" ${state.pageSetup.columns === 1 ? 'selected' : ''}>One Column</option>
                 <option value="2" ${state.pageSetup.columns === 2 ? 'selected' : ''}>Two Columns</option>
@@ -905,7 +1211,7 @@ export function createWordApp(container, options = {}) {
               </select>
             </div>
             <button class="r-btn r-btn-large" data-action="insert-page-break">
-              <span class="r-icon">✂️</span>
+              <span class="r-icon">${icons.pageBreak}</span>
               <span class="r-label">Breaks</span>
             </button>
           </div>
@@ -918,12 +1224,12 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <div class="ribbon-col">
-              <button class="r-btn" data-action="indent">⇥ Indent Left +0.5"</button>
-              <button class="r-btn" data-action="outdent">⇤ Indent Left -0.5"</button>
+              <button class="r-btn" data-action="indent">${icons.indent} Indent Left +0.5"</button>
+              <button class="r-btn" data-action="outdent">${icons.outdent} Indent Left -0.5"</button>
             </div>
             <div class="ribbon-col">
-              <button class="r-btn" data-action="space-after-increase">↕ Add Space After Paragraph</button>
-              <button class="r-btn" data-action="space-after-remove">↕ Remove Space After Paragraph</button>
+              <button class="r-btn" data-action="space-after-increase">${icons.lineSpacing} Add Space After</button>
+              <button class="r-btn" data-action="space-after-remove">${icons.lineSpacing} Remove Space After</button>
             </div>
           </div>
           <div class="ribbon-group-footer">Paragraph</div>
@@ -933,8 +1239,8 @@ export function createWordApp(container, options = {}) {
       ribbonSurface.innerHTML = `
         <div class="ribbon-group">
           <div class="ribbon-group-body">
-            <button class="r-btn r-btn-large" data-action="insert-toc" title="Generate Table of Contents from Headings">
-              <span class="r-icon">📑</span>
+            <button class="r-btn r-btn-large" data-action="insert-toc" title="Generate Table of Contents">
+              <span class="r-icon">${icons.toc}</span>
               <span class="r-label">Table of Contents</span>
             </button>
           </div>
@@ -943,8 +1249,8 @@ export function createWordApp(container, options = {}) {
 
         <div class="ribbon-group">
           <div class="ribbon-group-body">
-            <button class="r-btn r-btn-large" data-action="insert-footnote" title="Insert Footnote at End of Document">
-              <span class="r-icon">¹</span>
+            <button class="r-btn r-btn-large" data-action="insert-footnote" title="Insert Footnote">
+              <span class="r-icon">${icons.footnote}</span>
               <span class="r-label">Insert Footnote</span>
             </button>
           </div>
@@ -953,24 +1259,20 @@ export function createWordApp(container, options = {}) {
 
         <div class="ribbon-group">
           <div class="ribbon-group-body">
-            <button class="r-btn r-btn-large" data-action="insert-citation" title="Insert Formatted Citation">
-              <span class="r-icon">❝</span>
+            <button class="r-btn r-btn-large" data-action="insert-citation">
+              <span class="r-icon">${icons.symbol}</span>
               <span class="r-label">Insert Citation</span>
             </button>
-            <button class="r-btn r-btn-large" data-action="insert-caption" title="Insert Figure or Table Caption">
-              <span class="r-icon">🏷️</span>
-              <span class="r-label">Insert Caption</span>
-            </button>
           </div>
-          <div class="ribbon-group-footer">Citations &amp; Captions</div>
+          <div class="ribbon-group-footer">Citations</div>
         </div>
       `;
     } else if (tab === 'review') {
       ribbonSurface.innerHTML = `
         <div class="ribbon-group">
           <div class="ribbon-group-body">
-            <button class="r-btn r-btn-large" data-action="open-word-count-dialog" title="Word Count Statistics">
-              <span class="r-icon">🔢</span>
+            <button class="r-btn r-btn-large" data-action="open-word-count-dialog">
+              <span class="r-icon">${icons.wordCount}</span>
               <span class="r-label">Word Count</span>
             </button>
           </div>
@@ -980,11 +1282,11 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="add-comment">
-              <span class="r-icon">💬</span>
+              <span class="r-icon">${icons.comment}</span>
               <span class="r-label">New Comment</span>
             </button>
             <button class="r-btn r-btn-large ${state.showCommentsPane ? 'active' : ''}" data-action="toggle-comments-pane">
-              <span class="r-icon">🗂️</span>
+              <span class="r-icon">${icons.comment}</span>
               <span class="r-label">Show Comments</span>
             </button>
           </div>
@@ -994,7 +1296,7 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large ${state.trackChanges ? 'active' : ''}" data-action="toggle-track-changes">
-              <span class="r-icon">✍️</span>
+              <span class="r-icon">${icons.trackChanges}</span>
               <span class="r-label">Track Changes</span>
             </button>
           </div>
@@ -1006,23 +1308,23 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large ${state.viewMode === 'read' ? 'active' : ''}" data-action="set-view" data-view="read">
-              <span class="r-icon">📖</span>
+              <span class="r-icon">${icons.readMode}</span>
               <span class="r-label">Read Mode</span>
             </button>
             <button class="r-btn r-btn-large ${state.viewMode === 'print' ? 'active' : ''}" data-action="set-view" data-view="print">
-              <span class="r-icon">📄</span>
+              <span class="r-icon">${icons.printLayout}</span>
               <span class="r-label">Print Layout</span>
             </button>
             <button class="r-btn r-btn-large ${state.viewMode === 'web' ? 'active' : ''}" data-action="set-view" data-view="web">
-              <span class="r-icon">🌐</span>
+              <span class="r-icon">${icons.webLayout}</span>
               <span class="r-label">Web Layout</span>
             </button>
             <button class="r-btn r-btn-large ${state.viewMode === 'outline' ? 'active' : ''}" data-action="set-view" data-view="outline">
-              <span class="r-icon">📑</span>
+              <span class="r-icon">${icons.toc}</span>
               <span class="r-label">Outline</span>
             </button>
             <button class="r-btn r-btn-large ${state.viewMode === 'draft' ? 'active' : ''}" data-action="set-view" data-view="draft">
-              <span class="r-icon">📝</span>
+              <span class="r-icon">${icons.blankPage}</span>
               <span class="r-label">Draft</span>
             </button>
           </div>
@@ -1032,7 +1334,7 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large ${state.focusMode ? 'active' : ''}" data-action="toggle-focus">
-              <span class="r-icon">🎯</span>
+              <span class="r-icon">${icons.focusMode}</span>
               <span class="r-label">Focus</span>
             </button>
             <button class="r-btn r-btn-large ${state.darkMode ? 'active' : ''}" data-action="toggle-dark-mode">
@@ -1063,7 +1365,7 @@ export function createWordApp(container, options = {}) {
         <div class="ribbon-group">
           <div class="ribbon-group-body">
             <button class="r-btn r-btn-large" data-action="reset-zoom">
-              <span class="r-icon">🔍</span>
+              <span class="r-icon">${icons.search}</span>
               <span class="r-label">100%</span>
             </button>
             <div class="ribbon-col">
@@ -1074,52 +1376,6 @@ export function createWordApp(container, options = {}) {
           <div class="ribbon-group-footer">Zoom</div>
         </div>
       `;
-    } else if (tab === 'table') {
-      ribbonSurface.innerHTML = `
-        <div class="ribbon-group">
-          <div class="ribbon-group-body">
-            <button class="r-btn r-btn-large" data-action="table-insert-row-above">
-              <span class="r-icon">⬆️</span>
-              <span class="r-label">Insert Above</span>
-            </button>
-            <button class="r-btn r-btn-large" data-action="table-insert-row-below">
-              <span class="r-icon">⬇️</span>
-              <span class="r-label">Insert Below</span>
-            </button>
-            <button class="r-btn r-btn-large" data-action="table-insert-col-left">
-              <span class="r-icon">⬅️</span>
-              <span class="r-label">Insert Left</span>
-            </button>
-            <button class="r-btn r-btn-large" data-action="table-insert-col-right">
-              <span class="r-icon">➡️</span>
-              <span class="r-label">Insert Right</span>
-            </button>
-          </div>
-          <div class="ribbon-group-footer">Rows &amp; Columns</div>
-        </div>
-
-        <div class="ribbon-group">
-          <div class="ribbon-group-body">
-            <div class="ribbon-col">
-              <button class="r-btn" data-action="table-delete-row">🗑️ Delete Row</button>
-              <button class="r-btn" data-action="table-delete-col">🗑️ Delete Column</button>
-              <button class="r-btn" data-action="table-delete-table">❌ Delete Table</button>
-            </div>
-          </div>
-          <div class="ribbon-group-footer">Delete</div>
-        </div>
-
-        <div class="ribbon-group">
-          <div class="ribbon-group-body">
-            <div class="ribbon-col">
-              <button class="r-btn" data-action="table-merge-right">⊞ Merge Right</button>
-              <button class="r-btn" data-action="table-split-cell">⊟ Split Cell</button>
-              <button class="r-btn" data-action="table-shade-cell">🪣 Shade Cell</button>
-            </div>
-          </div>
-          <div class="ribbon-group-footer">Merge &amp; Shading</div>
-        </div>
-      `;
     }
 
     bindRibbonDynamicInputs();
@@ -1128,47 +1384,22 @@ export function createWordApp(container, options = {}) {
   function bindRibbonDynamicInputs() {
     const fontSelect = container.querySelector('#ribbon-font-family');
     if (fontSelect) {
-      fontSelect.addEventListener('change', e => {
-        applyInlineStyle('fontFamily', e.target.value);
-      });
+      fontSelect.addEventListener('change', e => applyInlineStyle('fontFamily', e.target.value));
     }
 
     const sizeSelect = container.querySelector('#ribbon-font-size');
     if (sizeSelect) {
-      sizeSelect.addEventListener('change', e => {
-        applyFontSizePt(Number(e.target.value));
-      });
-    }
-
-    const caseSelect = container.querySelector('#ribbon-change-case');
-    if (caseSelect) {
-      caseSelect.addEventListener('change', e => {
-        if (e.target.value) {
-          transformSelectedCase(e.target.value);
-          e.target.value = '';
-        }
-      });
+      sizeSelect.addEventListener('change', e => applyFontSizePt(Number(e.target.value)));
     }
 
     const highlightInput = container.querySelector('#ribbon-highlight-color');
     if (highlightInput) {
-      highlightInput.addEventListener('input', e => {
-        applyInlineStyle('backgroundColor', e.target.value);
-      });
+      highlightInput.addEventListener('input', e => applyInlineStyle('backgroundColor', e.target.value));
     }
 
     const fontColorInput = container.querySelector('#ribbon-font-color');
     if (fontColorInput) {
-      fontColorInput.addEventListener('input', e => {
-        applyInlineStyle('color', e.target.value);
-      });
-    }
-
-    const lineSpacingSelect = container.querySelector('#ribbon-line-spacing');
-    if (lineSpacingSelect) {
-      lineSpacingSelect.addEventListener('change', e => {
-        applyBlockStyle('lineHeight', e.target.value);
-      });
+      fontColorInput.addEventListener('input', e => applyInlineStyle('color', e.target.value));
     }
 
     const pageColorInput = container.querySelector('#design-page-color');
@@ -1240,9 +1471,57 @@ export function createWordApp(container, options = {}) {
         if (state.showNavPane) renderNavPane();
       });
     }
+
+    // Picture Format inputs
+    const picBorderCol = container.querySelector('#pic-border-color');
+    const picBorderWidth = container.querySelector('#pic-border-width');
+    const picHeightInp = container.querySelector('#pic-height-inp');
+    const picWidthInp = container.querySelector('#pic-width-inp');
+
+    if (picBorderCol && state.selectedPicture) {
+      const img = state.selectedPicture.querySelector('img');
+      picBorderCol.addEventListener('input', e => {
+        img.style.borderColor = e.target.value;
+        img.style.borderStyle = 'solid';
+        pushHistory();
+        markDirty();
+      });
+    }
+
+    if (picBorderWidth && state.selectedPicture) {
+      const img = state.selectedPicture.querySelector('img');
+      picBorderWidth.addEventListener('change', e => {
+        img.style.borderWidth = e.target.value;
+        img.style.borderStyle = e.target.value === '0' ? 'none' : 'solid';
+        pushHistory();
+        markDirty();
+      });
+    }
+
+    if (picHeightInp && state.selectedPicture) {
+      const img = state.selectedPicture.querySelector('img');
+      picHeightInp.addEventListener('change', e => {
+        const hPx = Math.round(parseFloat(e.target.value) * 96);
+        img.style.height = `${hPx}px`;
+        pushHistory();
+        markDirty();
+      });
+    }
+
+    if (picWidthInp && state.selectedPicture) {
+      const img = state.selectedPicture.querySelector('img');
+      picWidthInp.addEventListener('change', e => {
+        const wPx = Math.round(parseFloat(e.target.value) * 96);
+        img.style.width = `${wPx}px`;
+        pushHistory();
+        markDirty();
+      });
+    }
   }
 
-  // Formatting & Block Manipulation Helpers
+  // ==========================================================================
+  // Formatting & Block Manipulation
+  // ==========================================================================
   function getActiveBlockElement() {
     const sel = window.getSelection ? window.getSelection() : null;
     if (sel && sel.rangeCount > 0) {
@@ -1310,25 +1589,6 @@ export function createWordApp(container, options = {}) {
     markDirty();
   }
 
-  function transformSelectedCase(mode) {
-    const block = getActiveBlockElement();
-    if (!block) return;
-    const text = block.textContent || '';
-    if (!text) return;
-
-    let next = text;
-    if (mode === 'upper') next = text.toUpperCase();
-    else if (mode === 'lower') next = text.toLowerCase();
-    else if (mode === 'capitalize') {
-      next = text.replace(/\b\w/g, c => c.toUpperCase());
-    } else if (mode === 'sentence') {
-      next = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
-    }
-    block.textContent = next;
-    pushHistory();
-    markDirty();
-  }
-
   function insertHtmlAtCursor(htmlSnippet) {
     editorBody.focus();
     const sel = window.getSelection ? window.getSelection() : null;
@@ -1352,11 +1612,14 @@ export function createWordApp(container, options = {}) {
     } else {
       editorBody.insertAdjacentHTML('beforeend', htmlSnippet);
     }
+    attachPictureBehaviors();
     pushHistory();
     markDirty();
   }
 
+  // ==========================================================================
   // Table Operations
+  // ==========================================================================
   function getActiveTableCell() {
     if (state.activeCell && editorBody.contains(state.activeCell)) {
       return state.activeCell;
@@ -1443,7 +1706,9 @@ export function createWordApp(container, options = {}) {
     markDirty();
   }
 
-  // Find and Replace Engine
+  // ==========================================================================
+  // Find, Replace & Navigation Pane
+  // ==========================================================================
   function findTextMatches(query, matchCase = false) {
     if (!query) return 0;
     const content = editorBody.innerText || editorBody.textContent || '';
@@ -1479,7 +1744,6 @@ export function createWordApp(container, options = {}) {
     return count;
   }
 
-  // Navigation Pane Renderer
   function renderNavPane() {
     container.querySelectorAll('.nav-tab').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.navTab === state.navPaneTab);
@@ -1563,7 +1827,7 @@ export function createWordApp(container, options = {}) {
     `).join('');
   }
 
-  // Table of Contents & Footnotes
+  // TOC & Footnotes
   function insertTableOfContents() {
     const headings = Array.from(editorBody.querySelectorAll('h1, h2, h3'));
     const itemsHtml = headings.length > 0
@@ -1608,7 +1872,7 @@ export function createWordApp(container, options = {}) {
     markDirty();
   }
 
-  // Modal Dialogs
+  // Dialogs
   function openModal(title, bodyHtml, onConfirm, confirmLabel = 'OK') {
     modalDialog.innerHTML = `
       <div class="modal-header">
@@ -1670,6 +1934,7 @@ export function createWordApp(container, options = {}) {
           </div>
         </div>
       </div>
+      <div class="dialog-preview-box" id="dlg-font-preview">This font style is imitated for display.</div>
       `,
       dlg => {
         const fam = dlg.querySelector('#dlg-font-family').value;
@@ -1920,8 +2185,7 @@ export function createWordApp(container, options = {}) {
       { label: 'Area of a Circle', tex: 'A = πr²' },
       { label: 'Quadratic Formula', tex: 'x = (−b ± √(b² − 4ac)) / 2a' },
       { label: 'Pythagorean Theorem', tex: 'a² + b² = c²' },
-      { label: "Euler's Identity", tex: 'e^(iπ) + 1 = 0' },
-      { label: 'Gaussian Integral', tex: '∫ e^(−x²) dx = √π' }
+      { label: "Euler's Identity", tex: 'e^(iπ) + 1 = 0' }
     ];
     openModal(
       'Insert Equation',
@@ -1943,11 +2207,6 @@ export function createWordApp(container, options = {}) {
       },
       'Insert'
     );
-    const presetSel = modalDialog.querySelector('#dlg-eq-preset');
-    const customInp = modalDialog.querySelector('#dlg-eq-custom');
-    presetSel.addEventListener('change', () => {
-      customInp.value = presetSel.value;
-    });
   }
 
   function openSymbolDialog() {
@@ -1992,7 +2251,9 @@ export function createWordApp(container, options = {}) {
     );
   }
 
-  // File Operations (New, Open, Save, Save As, Export, Print)
+  // ==========================================================================
+  // File Backstage, Open, Save, Export
+  // ==========================================================================
   function loadTemplate(templateKey = 'blank') {
     const tpl = TEMPLATES[templateKey] || TEMPLATES.blank;
     state.documentTitle = tpl.title;
@@ -2004,6 +2265,7 @@ export function createWordApp(container, options = {}) {
     headerEditable.innerHTML = state.headerText;
     footerEditable.innerHTML = state.footerText;
     editorBody.innerHTML = tpl.html;
+    attachPictureBehaviors();
     pushHistory();
     refreshDocumentMetrics();
     backstageOverlay.classList.add('hidden');
@@ -2070,7 +2332,6 @@ export function createWordApp(container, options = {}) {
       return;
     }
 
-    // Browser Save / Download
     if (format === 'docx') {
       const uint8 = await exportDocx(docState);
       const blob = new Blob([uint8], {
@@ -2134,6 +2395,7 @@ export function createWordApp(container, options = {}) {
         .join('');
     }
 
+    attachPictureBehaviors();
     state.dirty = false;
     saveBadge.textContent = 'Opened';
     addRecentFile(name);
@@ -2168,7 +2430,7 @@ export function createWordApp(container, options = {}) {
     window.print();
   }
 
-  // Backstage View Renderer
+  // Backstage View
   function renderBackstage() {
     const sec = state.backstageSection;
     container.querySelectorAll('.backstage-nav-item[data-backstage]').forEach(btn => {
@@ -2284,7 +2546,7 @@ export function createWordApp(container, options = {}) {
     }
   }
 
-  // Tell Me Command Registry (modeled on TellMeWord.nrr)
+  // Tell Me Command Search
   const COMMAND_PALETTE = [
     { label: 'Save Document (.docx)', shortcut: 'Ctrl+S', action: () => saveDocument('docx') },
     { label: 'Open Document...', shortcut: 'Ctrl+O', action: () => triggerOpenDocument() },
@@ -2293,6 +2555,7 @@ export function createWordApp(container, options = {}) {
     { label: 'Italic', shortcut: 'Ctrl+I', action: () => executeAction('italic') },
     { label: 'Underline', shortcut: 'Ctrl+U', action: () => executeAction('underline') },
     { label: 'Insert Table...', shortcut: '', action: () => openTableDialog() },
+    { label: 'Insert Pictures...', shortcut: '', action: () => imageUploadInput.click() },
     { label: 'Insert Page Break', shortcut: 'Ctrl+Enter', action: () => executeAction('insert-page-break') },
     { label: 'Insert Hyperlink...', shortcut: 'Ctrl+K', action: () => openHyperlinkDialog() },
     { label: 'Insert Table of Contents', shortcut: '', action: () => insertTableOfContents() },
@@ -2334,7 +2597,7 @@ export function createWordApp(container, options = {}) {
     tellMeInput.dispatchEvent(new Event('input'));
   });
 
-  // Central Action Dispatcher
+  // Action Dispatcher
   function executeAction(action, dataset = {}) {
     switch (action) {
       case 'open-backstage':
@@ -2668,9 +2931,6 @@ export function createWordApp(container, options = {}) {
       case 'insert-citation':
         insertHtmlAtCursor(`<span>(Microsoft Office Reference, 2026)</span> `);
         break;
-      case 'insert-caption':
-        insertHtmlAtCursor(`<p style="font-size:9.5pt;font-style:italic;color:#0F4761;">Figure 1: Document Architecture Diagram</p>`);
-        break;
       case 'open-word-count-dialog':
         openWordCountDialog();
         break;
@@ -2727,6 +2987,94 @@ export function createWordApp(container, options = {}) {
       case 'zoom-one-page':
         setZoom(80);
         break;
+
+      // Picture Formatting Actions
+      case 'pic-style-round': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          img.style.borderRadius = '16px';
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-style-shadow': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          img.style.boxShadow = '0 12px 24px rgba(0,0,0,0.3)';
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-style-frame': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          img.style.border = '4px solid #185ABD';
+          img.style.borderRadius = '4px';
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-style-circle': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          img.style.borderRadius = '50%';
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-reset-style': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          img.style.border = 'none';
+          img.style.borderRadius = '0';
+          img.style.boxShadow = 'none';
+          img.style.transform = 'none';
+          state.selectedPicture.dataset.rotation = '0';
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-open-wrap': {
+        if (state.selectedPicture) openPictureWrapMenu(state.selectedPicture);
+        break;
+      }
+      case 'pic-rotate-90': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          const current = (parseInt(state.selectedPicture.dataset.rotation || '0', 10) + 90) % 360;
+          img.style.transform = `rotate(${current}deg)`;
+          state.selectedPicture.dataset.rotation = String(current);
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-flip-h': {
+        if (state.selectedPicture) {
+          const img = state.selectedPicture.querySelector('img');
+          const current = state.selectedPicture.dataset.flipped === 'true';
+          img.style.transform = current ? 'none' : 'scaleX(-1)';
+          state.selectedPicture.dataset.flipped = String(!current);
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+      case 'pic-delete': {
+        if (state.selectedPicture) {
+          state.selectedPicture.remove();
+          deselectAllPictures();
+          pushHistory();
+          markDirty();
+        }
+        break;
+      }
+
       default:
         if (action && action.startsWith('table-')) {
           handleTableAction(action);
@@ -2743,7 +3091,7 @@ export function createWordApp(container, options = {}) {
     statusZoomBtn.textContent = `${clamped}%`;
   }
 
-  // Event Delegation for Clicks
+  // Event Delegation
   container.addEventListener('click', e => {
     if (!e.target.closest('.tell-me-wrapper')) {
       tellMeDropdown.style.display = 'none';
@@ -2777,16 +3125,25 @@ export function createWordApp(container, options = {}) {
       return;
     }
 
-    // Track contextual table cell selection
+    // Deselect picture when clicking away
+    if (!e.target.closest('.pic-wrapper') && !e.target.closest('.ribbon-surface')) {
+      if (state.selectedPicture) deselectAllPictures();
+    }
+
+    // Track table cell
     const cell = e.target.closest('td, th');
     if (cell && editorBody.contains(cell)) {
       state.activeCell = cell;
       tableContextualTab.style.display = 'inline-flex';
     } else if (editorBody.contains(e.target)) {
       tableContextualTab.style.display = 'none';
+      if (state.activeTab === 'table') {
+        state.activeTab = 'home';
+        renderRibbon();
+      }
     }
 
-    // Format Painter application on click inside editor
+    // Format painter apply
     if (state.formatPainterStyle !== null && editorBody.contains(e.target)) {
       const block = getActiveBlockElement();
       if (block && block !== editorBody) {
@@ -2799,13 +3156,28 @@ export function createWordApp(container, options = {}) {
     }
   });
 
+  // Floating Mini Toolbar on Selection
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !editorBody.contains(sel.anchorNode)) {
+      miniToolbar.classList.add('hidden');
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    if (rect.width > 0) {
+      miniToolbar.style.top = `${Math.max(10, rect.top - 46)}px`;
+      miniToolbar.style.left = `${Math.max(10, rect.left + rect.width / 2 - 140)}px`;
+      miniToolbar.classList.remove('hidden');
+    }
+  });
+
   // Document Title Input
   docTitleInput.addEventListener('input', () => {
     state.documentTitle = docTitleInput.value.trim() || 'Document1';
     markDirty();
   });
 
-  // Editor Input & Track Changes
   editorBody.addEventListener('input', () => {
     pushHistory();
     markDirty();
@@ -2823,12 +3195,10 @@ export function createWordApp(container, options = {}) {
     markDirty();
   });
 
-  // Zoom Slider
   zoomSlider.addEventListener('input', () => {
     setZoom(Number(zoomSlider.value));
   });
 
-  // Navigation Search
   navSearchInput.addEventListener('input', () => {
     state.navSearchQuery = navSearchInput.value;
     state.navPaneTab = 'results';
@@ -2849,19 +3219,31 @@ export function createWordApp(container, options = {}) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      insertHtmlAtCursor(`<p><img src="${reader.result}" alt="${file.name}" style="max-width:420px;" /></p>`);
+      const img = document.createElement('img');
+      img.src = reader.result;
+      img.alt = file.name;
+      img.style.maxWidth = '360px';
+      const wrapper = wrapPictureElement(img);
+      insertHtmlAtCursor(wrapper.outerHTML);
+      attachPictureBehaviors();
     };
     reader.readAsDataURL(file);
     imageUploadInput.value = '';
   });
 
-  // Keyboard Shortcuts (matching SPEC.md Section 3.6)
+  // Keyboard Shortcuts
   window.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if (state.focusMode) executeAction('toggle-focus');
       if (state.backstageOpen) executeAction('close-backstage');
       modalBackdrop.classList.add('hidden');
       miniToolbar.classList.add('hidden');
+      if (state.selectedPicture) deselectAllPictures();
+      return;
+    }
+
+    if (e.key === 'Delete' && state.selectedPicture) {
+      executeAction('pic-delete');
       return;
     }
 
@@ -2930,7 +3312,7 @@ export function createWordApp(container, options = {}) {
     }
   });
 
-  // Desktop IPC Integration (when running inside Electron Windows Shell)
+  // Desktop IPC Integration
   if (isDesktop && window.wordDesktop && window.wordDesktop.onMenuCommand) {
     window.wordDesktop.onMenuCommand(async (cmd, payload) => {
       if (cmd === 'file:new') loadTemplate('blank');
@@ -2948,13 +3330,14 @@ export function createWordApp(container, options = {}) {
     });
   }
 
-  // Initialize View
+  // Initialize
   renderRibbon();
   applyPageSetupToDom();
+  attachPictureBehaviors();
   pushHistory();
   refreshDocumentMetrics();
 
-  // Public API for programmatic control & automated tests
+  // Public Test & Control API
   return {
     state,
     editorBody,
@@ -2967,6 +3350,9 @@ export function createWordApp(container, options = {}) {
     applyBlockStyle,
     insertTable,
     handleTableAction,
+    wrapPictureElement,
+    selectPicture,
+    deselectAllPictures,
     findTextMatches,
     replaceAllMatches,
     insertTableOfContents,

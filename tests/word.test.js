@@ -9,7 +9,7 @@ import {
   importRtfDocument
 } from '../src/docx/docxEngine.js';
 
-describe('Word Application & OpenXML (.docx) Engine', () => {
+describe('Word Application 1:1 Fidelity & Automated Feature Suite', () => {
   let container;
   let app;
 
@@ -19,17 +19,20 @@ describe('Word Application & OpenXML (.docx) Engine', () => {
     app = createWordApp(container);
   });
 
-  it('initializes with default document content, ribbon tabs, and status bar metrics', () => {
+  it('initializes with default document content, Fluent vector icons, ribbon tabs, and status bar metrics', () => {
     expect(container.querySelector('.title-bar')).not.toBeNull();
     expect(container.querySelectorAll('.ribbon-tab[data-tab]').length).toBeGreaterThanOrEqual(7);
     const stats = app.getDocumentStats();
     expect(stats.words).toBeGreaterThan(40);
     expect(stats.pages).toBeGreaterThanOrEqual(1);
     expect(stats.paragraphs).toBeGreaterThan(3);
+    // Verify vector SVGs are present in QAT and ribbon
+    expect(container.querySelector('.qat-btn svg')).not.toBeNull();
+    expect(container.querySelector('.app-brand svg')).not.toBeNull();
   });
 
-  it('switches across all Ribbon tabs (Home, Insert, Design, Layout, References, Review, View, Table Layout)', () => {
-    const tabs = ['home', 'insert', 'design', 'layout', 'references', 'review', 'view', 'table'];
+  it('switches across all Ribbon tabs (Home, Insert, Design, Layout, References, Review, View)', () => {
+    const tabs = ['home', 'insert', 'design', 'layout', 'references', 'review', 'view'];
     for (const tabName of tabs) {
       const btn = container.querySelector(`.ribbon-tab[data-tab="${tabName}"]`);
       expect(btn).not.toBeNull();
@@ -37,6 +40,65 @@ describe('Word Application & OpenXML (.docx) Engine', () => {
       expect(app.state.activeTab).toBe(tabName);
       expect(container.querySelector('#ribbon-surface').children.length).toBeGreaterThan(0);
     }
+  });
+
+  it('supports picture insertion, 8 resize handles, interactive resizing, and contextual Picture Format tab', () => {
+    app.loadTemplate('blank');
+    const img = document.createElement('img');
+    img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="blue" width="100" height="100"/></svg>';
+    img.style.width = '200px';
+    img.style.height = '150px';
+    app.editorBody.appendChild(img);
+
+    const wrapper = app.wrapPictureElement(img);
+    expect(wrapper).not.toBeNull();
+    expect(wrapper.classList.contains('pic-wrapper')).toBe(true);
+
+    // Verify 8 resize handles + rotation handle
+    expect(wrapper.querySelectorAll('.resize-handle').length).toBe(9);
+    expect(wrapper.querySelector('.handle-nw')).not.toBeNull();
+    expect(wrapper.querySelector('.handle-se')).not.toBeNull();
+    expect(wrapper.querySelector('.handle-rot')).not.toBeNull();
+    expect(wrapper.querySelector('.pic-layout-btn')).not.toBeNull();
+
+    // Select picture -> activates contextual Picture Format ribbon tab
+    app.selectPicture(wrapper);
+    expect(wrapper.classList.contains('selected')).toBe(true);
+    expect(app.state.selectedPicture).toBe(wrapper);
+    expect(app.state.activeTab).toBe('picture');
+
+    const picTab = container.querySelector('#picture-contextual-tab');
+    expect(picTab.style.display).not.toBe('none');
+
+    // Apply picture formatting actions
+    app.executeAction('pic-style-round');
+    expect(img.style.borderRadius).toBe('16px');
+
+    app.executeAction('pic-style-shadow');
+    expect(img.style.boxShadow).toContain('rgba');
+
+    app.executeAction('pic-rotate-90');
+    expect(img.style.transform).toBe('rotate(90deg)');
+
+    // Deselect picture -> hides contextual tab and switches back to home
+    app.deselectAllPictures();
+    expect(wrapper.classList.contains('selected')).toBe(false);
+    expect(app.state.selectedPicture).toBeNull();
+    expect(app.state.activeTab).toBe('home');
+    expect(picTab.style.display).toBe('none');
+  });
+
+  it('activates contextual Table Layout tab when cursor is in table cell', () => {
+    app.loadTemplate('blank');
+    app.insertTable(3, 3);
+    const table = app.editorBody.querySelector('table');
+    expect(table).not.toBeNull();
+
+    const cell = table.querySelector('td');
+    cell.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    const tableTab = container.querySelector('#table-contextual-tab');
+    expect(tableTab.style.display).not.toBe('none');
   });
 
   it('applies Quick Styles (Heading 1, Heading 2, Title, Quote) and inline/paragraph formatting', () => {
@@ -158,7 +220,6 @@ describe('Word Application & OpenXML (.docx) Engine', () => {
     expect(docxBytes).toBeInstanceOf(Uint8Array);
     expect(docxBytes.byteLength).toBeGreaterThan(1000);
 
-    // Inspect OpenXML package entries directly
     const zip = await JSZip.loadAsync(docxBytes);
     expect(zip.file('[Content_Types].xml')).not.toBeNull();
     expect(zip.file('word/document.xml')).not.toBeNull();
@@ -166,7 +227,6 @@ describe('Word Application & OpenXML (.docx) Engine', () => {
     expect(zip.file('word/header1.xml')).not.toBeNull();
     expect(zip.file('word/footer1.xml')).not.toBeNull();
 
-    // Round-trip import
     const roundTripped = await importDocx(docxBytes);
     expect(roundTripped.metadata.title).toBe('Architecture Spec');
     expect(roundTripped.metadata.author).toBe('Verification Suite');
